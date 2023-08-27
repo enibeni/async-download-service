@@ -1,9 +1,12 @@
 import os
 import aiofiles
 import asyncio
+import logging
 
 from aiohttp import web
 from middlewares import create_error_middleware, handle_404
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 async def archive(request):
@@ -13,21 +16,24 @@ async def archive(request):
     if not os.path.exists(path):
         raise web.HTTPNotFound()
 
+    async def stream_archive(response):
+        process = await asyncio.create_subprocess_exec(
+            *['zip', '-r', '-', '.'],
+            cwd=path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE)
+
+        while True:
+            line = await process.stdout.read(500000)
+            logging.debug(u'Sending archive chunk ...')
+            await response.write(line)
+            if process.stdout.at_eof():
+                break
+
     response = web.StreamResponse()
     response.headers['Content-Disposition'] = 'attachment; filename="archive.zip'
     await response.prepare(request)
-
-    process = await asyncio.create_subprocess_exec(
-        *['zip', '-r', '-', '.'],
-        cwd=path,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE)
-
-    while True:
-        line = await process.stdout.read(500)
-        await response.write(line)
-        if process.stdout.at_eof():
-            break
+    await stream_archive(response)
 
     return response
 
