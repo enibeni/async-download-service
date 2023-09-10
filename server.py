@@ -10,9 +10,9 @@ from middlewares import create_error_middleware, handle_404
 
 def get_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--path', type=str, default='photos', help='Set directory with photos')
     parser.add_argument('--debug', type=bool, default=False, help='Set debug mode')
     parser.add_argument('--delay', type=int, default=0, help='Set delay between chunks')
-    parser.add_argument('--path', type=str, default='photos', help='Set directory with photos')
     return parser.parse_args()
 
 
