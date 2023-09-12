@@ -24,6 +24,8 @@ async def archive(request):
         raise web.HTTPNotFound()
 
     response = web.StreamResponse()
+    response.enable_chunked_encoding()
+    response.headers['Content-Type'] = 'application/zip'
     response.headers['Content-Disposition'] = f'attachment; filename="{archive_hash}.zip'
     await response.prepare(request)
 
